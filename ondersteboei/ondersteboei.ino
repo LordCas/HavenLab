@@ -33,13 +33,12 @@ int     led_port = 13;
 int turbulanceSensorValue = analogRead(A3);// read the input on analog pin 0:
 
  DallasTemperature sensors(&oneWire);
- int selinitySensor;
+ float selinitySensorData;
  float turbulanceSensorData;
- 
  
  String turbulanceSensorDataRoundedToHEX;
  String selinitySensorToHEX;
- String temparatuurSensorDataToHEX;
+ String temparatureSensorDataToHEX;
  
  
 //*** <---/declaring pins and sensor positions
@@ -69,6 +68,10 @@ void setup() {
 
 void loop() {
  
+     
+  readSelinitySensor(); // read the SelinitySensor 
+  readTurbulanceSensor(); //read out the Turbulance Sensor
+  sensors.requestTemperatures(); // Send the command to get temperatures);
   
   send_LoRa_data(set_port);// the data that has to be send to the server (iTalks in this case)
   delay(100);
@@ -77,11 +80,7 @@ void loop() {
   read_data_from_LoRa_Mod();
   delay(600);
   
-   //salt
-  selinitySensor = analogRead(A0);
-  Serial.print("Weerstand ");
-  readTurbulanceSensor(); //read out the Turbulance Sensor
-  sensors.requestTemperatures(); // Send the command to get temperatures);
+
    delay(6000);  
 }
 
@@ -163,7 +162,7 @@ void send_LoRa_data(int tx_port)
 
     floatToHEX();
  //   print_to_console(selinitySensorToHEX + String(" ") + turbulanceSensorDataRoundedToHEX); uncomment this line for an extra check before sending
-    send_LoRa_Command("mac tx cnf " + String(tx_port) + String(" ") +  selinitySensorToHEX + String("BAB") + turbulanceSensorDataRoundedToHEX + String("BAB") + temparatuurSensorDataToHEX); //BAB is to indicate the sensorAttributes later on the end point
+    send_LoRa_Command("mac tx cnf " + String(tx_port) + String(" ") +  selinitySensorToHEX + String("BAB") + turbulanceSensorDataRoundedToHEX + String("BAB") + temparatureSensorDataToHEX); //BAB is to indicate the sensorAttributes later on the end point
 
 }
 
@@ -192,12 +191,38 @@ void readTurbulanceSensor(){
   delay(500);
 }
 
+void readSelinitySensor(){
+
+float PPMconversion=0.64; // EU standard PPM 
+float K=6.28;           // EU standardized worth for K
+float EC=0;
+float EC25 =0;
+int ppm =0; 
+int R1= 1000;
+int Ra=25; //Resistance of powering Pins
+int Vin = 5;           // variable to store the input voltage
+float Vout = 0;        // variable to store the output voltage
+float R1 = 10;         // variable to store the R1 value
+float buffer = 0;      // buffer variable for calculation
+float raw = analogRead(A0);    // Reads the Input PIN
+
+ Vout = (5.0 * raw) /  1024.0;    // Calculates the Voltage on th Input PIN
+ float Vdrop= (Vin*raw)/1024.0;
+ float Rc=(Vdrop*R1)/(Vin-Vdrop);
+ Rc=Rc-Ra; //acounting for Digital Pin Resitance
+ EC = 1000/(Rc*K);
+ EC25  =  EC/ (1+ TemperatureCoef*(Temperature-25.0));
+ selinitySensorData =(EC25)*(PPMconversion*1000); // salinity after taking the temperature into account
+}
+
+
 
 
 void floatToHEX(){
   //float compassSensorDataMultiplied = compassSensorData * 100.00;
- 
-  selinitySensorToHEX = String(selinitySensor,HEX); 
+  float selinitySensorDataMultieplied = selinitySensorData * 100.00;
+  int selinitySensorDataRounded = round(selinitySensorDataMultieplied);
+  selinitySensorToHEX = String(selinitySensorDataRounded,HEX); 
 
   float turbulanceSensorDataMultiplied = turbulanceSensorData * 100.00;
   int turbulanceSensorDataRounded = round(turbulanceSensorDataMultiplied);   
