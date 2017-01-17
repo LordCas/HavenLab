@@ -202,16 +202,16 @@ int R1= 1000;
 int Ra=25; //Resistance of powering Pins
 int Vin = 5;           // variable to store the input voltage
 float Vout = 0;        // variable to store the output voltage
-float R1 = 10;         // variable to store the R1 value
+float R10 = 10;         // variable to store the R1 value
 float buffer = 0;      // buffer variable for calculation
 float raw = analogRead(A0);    // Reads the Input PIN
 
  Vout = (5.0 * raw) /  1024.0;    // Calculates the Voltage on th Input PIN
  float Vdrop= (Vin*raw)/1024.0;
- float Rc=(Vdrop*R1)/(Vin-Vdrop);
+ float Rc=(Vdrop*R10)/(Vin-Vdrop);
  Rc=Rc-Ra; //acounting for Digital Pin Resitance
  EC = 1000/(Rc*K);
- EC25  =  EC/ (1+ TemperatureCoef*(Temperature-25.0));
+ EC25  =  EC/ (1+ sensors.getTempCByIndex(0)*(sensors.getTempCByIndex(0)-25.0));
  selinitySensorData =(EC25)*(PPMconversion*1000); // salinity after taking the temperature into account
 }
 
